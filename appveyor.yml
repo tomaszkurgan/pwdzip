@@ -1,0 +1,16 @@
+build: false
+
+environment:
+  matrix:
+    - PYTHON_VERSION: 2.7
+
+init:
+  - "ECHO %PYTHON_VERSION%"
+
+install:
+  - pip install pytest
+
+test_script:
+  - "SET PYTHONPATH=%CD%/source;%PYTHONPATH%"
+  - "ECHO %PYTHONPATH%"
+  - pytest
