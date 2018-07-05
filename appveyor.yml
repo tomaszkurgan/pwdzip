@@ -9,8 +9,9 @@ init:
 
 install:
   - pip install pytest
+  - pip install git+https://github.com/tomaszkurgan/pytesting@master
 
 test_script:
   - "SET PYTHONPATH=%CD%/source;%PYTHONPATH%"
   - "ECHO %PYTHONPATH%"
-  - pytest
+  - pytest -s

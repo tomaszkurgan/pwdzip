@@ -12,7 +12,7 @@ _7Z_BIN_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), 'bin', '7
 _7Z_EXE = os.path.join(_7Z_BIN_DIR, '7za.exe')
 
 
-def run_7z(command, switches, args):
+def _run_7z(command, switches, args):
     cmd = [_7Z_EXE] + [command] + switches + args
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
@@ -22,7 +22,7 @@ def run_7z(command, switches, args):
 
 
 class ZipFile(zipfile.ZipFile):
-    def __init__(self, filename, mode="r", compression=zipfile.ZIP_STORED, allowZip64=False, pwd=None):
+    def __init__(self, filename, mode='r', compression=zipfile.ZIP_STORED, allowZip64=False, pwd=None):
         super(ZipFile, self).__init__(filename, mode, compression, allowZip64)
         self.setpassword(pwd)
 
@@ -52,7 +52,7 @@ class ZipFile(zipfile.ZipFile):
         zip_dir_name = uuid.uuid4().hex.upper()[:16]
         temp_dir = os.path.join(tempfile.gettempdir(), zip_dir_name)
 
-        run_7z(
+        _run_7z(
             command='e',
             switches=[
                 '-y',
@@ -85,7 +85,7 @@ class ZipFile(zipfile.ZipFile):
 
         temp_archive_path = os.path.join(os.path.dirname(os.path.dirname(self.filename)), temp_archive_name)
 
-        run_7z(
+        _run_7z(
             command='a',
             switches=[
                 '-y',  # Assume Yes on all queries
