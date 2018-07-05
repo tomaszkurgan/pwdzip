@@ -299,9 +299,9 @@ http://www.gnu.org/
 # IMAGES LICENSE
 #
 Images:
-    tests/resources/img/img01.jpg
-    tests/resources/img/img02.jpg
-    tests/resources/img/img03.jpg
+    tests/resources/test_pwdzip/static/img/img01.jpg
+    tests/resources/test_pwdzip/static/img/img02.jpg
+    tests/resources/test_pwdzip/static/img/img03.jpg
 from https://pixabay.com/ are distributed under CC0 1.0 Universal (CC0 1.0) license.
 
 
