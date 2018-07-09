@@ -4,10 +4,9 @@ import os
 source_dir = 'source'
 
 packages = find_packages(os.path.join('.', source_dir))
-package_dir = {}
-for package in packages:
-    package_path = os.path.join(*package.split('.'))
-    package_dir[package] = os.path.join(source_dir, package_path)
+package_dir = {
+    '': source_dir,
+}
 
 install_requires = []
 dependency_links = []
