@@ -21,7 +21,13 @@ class ZipFileReader(zipfile.ZipFile):
         self.setpassword(pwd)
 
         self._payload_name = self._find_payload()
-        self._payload = None
+        self._payload_archive = None
+
+    @property
+    def _payload(self):
+        if not self._payload_archive and self._payload_name:
+            self._payload_archive = self._load_payload()
+        return self._payload_archive
 
     def _find_payload(self):
         if self.mode != 'r':
@@ -42,7 +48,7 @@ class ZipFileReader(zipfile.ZipFile):
     def _extract_payload(self, destination_dir):
         return self.extractall(destination_dir)
 
-    def _get_payload(self):
+    def _load_payload(self):
         if not self._payload_name:
             return
 
@@ -91,9 +97,6 @@ class ZipFileReader(zipfile.ZipFile):
             outer_self = inspect.stack()[1][0].f_locals.get('self')
             if outer_self and isinstance(outer_self, ZipFileReader):
                 return getattr(super(ZipFileReader, self), func_name)(*args, **kwargs)
-
-            if not self._payload and self._payload_name:
-                self._payload = self._get_payload()
 
             if self._payload:
                 return getattr(self._payload, func_name)(*args, **kwargs)
