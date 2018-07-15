@@ -1,12 +1,9 @@
 import os
 import zipfile
 
-import pwdzip
+from pwdzip import pwdzip
 
-PASSWORD = 'mrvuNcHxp25N'
-
-IMG_DIR_NAME = 'img'
-ZIP_DIR_NAME = 'zip'
+from .globals import PASSWORD, IMG_DIR_NAME, ZIP_DIR_NAME
 
 
 ###############################################################################
