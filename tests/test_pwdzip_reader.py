@@ -23,3 +23,4 @@ def test_extract(resource_dir, temp_dir):
                    'img02.jpg',
                    'img03.jpg',
                } == set(os.listdir(content_dir_path))
+   

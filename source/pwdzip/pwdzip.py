@@ -67,11 +67,6 @@ class ZipFile(pwdzip_reader.ZipFileReader):
 
         shutil.move(temp_archive_path, orig_path)
 
-    def side_name_list(self):
-        name_list = self._call_orig(self.namelist)
-        name_list.remove(self._payload_name)
-        return name_list
-
     def write_side_file(self, filename):
         self._side_files.append(filename)
 

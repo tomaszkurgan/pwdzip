@@ -2,6 +2,7 @@
 compatible with pwdzip module."""
 
 import StringIO
+import inspect
 import os
 import shutil
 import tempfile
@@ -14,19 +15,15 @@ class ZipFileReader(zipfile.ZipFile):
 
     def __init__(self, filename, mode='r', compression=zipfile.ZIP_STORED, allowZip64=False, pwd=None):
         if mode not in self.SUPPORTED_MODES:
-            raise ValueError('Unsupported mode %s. Allowed modes are %s.' % (mode, ', '.join(self.SUPPORTED_MODES)))
+            raise ValueError('Unsupported mode %s. Supported modes are %s.' % (mode, ', '.join(self.SUPPORTED_MODES)))
 
         super(ZipFileReader, self).__init__(filename, mode, compression, allowZip64)
         self.setpassword(pwd)
 
-        self._payload_name = None
+        self._payload_name = self._find_payload()
         self._payload = None
-        self._get_payload()
 
-    def _extract_payload(self, destination_dir):
-        return self.extractall(destination_dir)
-
-    def _get_payload(self):
+    def _find_payload(self):
         if self.mode != 'r':
             return None
 
@@ -34,11 +31,20 @@ class ZipFileReader(zipfile.ZipFile):
         if len(zip_files) != 1:
             return None
 
-        self._payload_name = zip_files[0]
-        payload_info = self.getinfo(self._payload_name)
+        payload_candidate = zip_files[0]
+        payload_info = self.getinfo(payload_candidate)
         is_encrypted = payload_info.flag_bits & 0x1
         if not is_encrypted:
             return None
+
+        return payload_candidate
+
+    def _extract_payload(self, destination_dir):
+        return self.extractall(destination_dir)
+
+    def _get_payload(self):
+        if not self._payload_name:
+            return
 
         zip_dir_name = uuid.uuid4().hex.upper()[:16]
         temp_dir = os.path.join(tempfile.gettempdir(), zip_dir_name)
@@ -55,41 +61,49 @@ class ZipFileReader(zipfile.ZipFile):
         except OSError:
             shutil.rmtree(temp_dir)
 
-        self._payload = zipfile.ZipFile(payload_buffer)
+        return zipfile.ZipFile(payload_buffer)
+
+    def side_name_list(self):
+        name_list = self.namelist()
+        try:
+            name_list.remove(self._payload_name)
+        except ValueError:
+            pass
+        return name_list
+
+    def read_side(self, name):
+        return self.read(name)
+
+    def extract_side(self, name, path):
+        return self.extract(name, path)
 
     ###############################################################################
     # redirect methods into internal archive
     #
-    def _call_orig(self, func, *args, **kwargs):
-        func_name = func.__name__
-        return getattr(super(ZipFileReader, self), func_name)(*args, **kwargs)
 
-    def _call_payload(self, func, *args, **kwargs):
-        func_name = func.__name__
-        if self._payload:
-            return getattr(self._payload, func_name)(*args, **kwargs)
-        return getattr(super(ZipFileReader, self), func_name)(*args, **kwargs)
+    # noinspection PyMethodParameters
+    def get_dispatcher(func_name):
+        """
+        Args:
+            func_name (str):
+        """
+        def dispatcher(self, *args, **kwargs):
+            outer_self = inspect.stack()[1][0].f_locals.get('self')
+            if outer_self and isinstance(outer_self, ZipFileReader):
+                return getattr(super(ZipFileReader, self), func_name)(*args, **kwargs)
 
-    def namelist(self):
-        return self._call_payload(self.namelist)
+            if not self._payload and self._payload_name:
+                self._payload = self._get_payload()
 
-    def printdir(self):
-        return self._call_payload(self.printdir)
+            if self._payload:
+                return getattr(self._payload, func_name)(*args, **kwargs)
 
-    def testzip(self):
-        return self._call_payload(self.testzip)
+            return getattr(super(ZipFileReader, self), func_name)(*args, **kwargs)
 
-    def infolist(self):
-        return self._call_payload(self.infolist)
+        return dispatcher
 
-    def getinfo(self, name):
-        return self._call_payload(self.getinfo, name)
-
-    def read(self, name, pwd=None):
-        return self._call_payload(self.read, name, pwd)
-
-    def extract(self, member, path=None, pwd=None):
-        return self._call_payload(self.extract, member, path, pwd)
-
-    def extractall(self, path=None, members=None, pwd=None):
-        return self._call_payload(self.extractall, path, members, pwd)
+    for name in ('namelist', 'printdir', 'testzip', 'infolist', 'getinfo',
+                 'read', 'extract', 'extractall'):
+        # noinspection PyArgumentList
+        locals()[name] = get_dispatcher(name)
+    del locals()['get_dispatcher']

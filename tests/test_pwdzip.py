@@ -46,14 +46,28 @@ def test_extract(resource_dir, temp_dir):
     with pwdzip.ZipFile(zip_file_path, pwd=PASSWORD) as zf:
         zf.extract('img01.jpg', path=content_dir_path)
 
-    assert ['img01.jpg'] == os.listdir(content_dir_path)
+    assert {'img01.jpg'} == set(os.listdir(content_dir_path))
+
+
+def test_extract_side_file(resource_dir, temp_dir):
+    zip_file_path = os.path.join(temp_dir, 'temp.zip')
+
+    with pwdzip.ZipFile(zip_file_path, mode='w', pwd=PASSWORD) as zf:
+        zf.write(os.path.join(resource_dir, IMG_DIR_NAME, 'img01.jpg'), arcname='img01.jpg')
+        zf.write_side_file(os.path.join(resource_dir, IMG_DIR_NAME, 'img02.jpg'))
+
+    content_dir_path = os.path.join(temp_dir, 'content')
+
+    with pwdzip.ZipFile(zip_file_path, pwd=PASSWORD) as zf:
+        zf.extract_side('img02.jpg', path=content_dir_path)
+
+    assert {'img02.jpg'} == set(os.listdir(content_dir_path))
 
 
 def test_zip_directory(resource_dir, temp_dir):
     zip_file_path = os.path.join(temp_dir, 'temp.zip')
 
-    with pwdzip.ZipFile(zip_file_path, mode='w') as zf:
-        zf.setpassword(PASSWORD)
+    with pwdzip.ZipFile(zip_file_path, mode='w', pwd=PASSWORD) as zf:
         zf.write(os.path.join(resource_dir, IMG_DIR_NAME), arcname='imgs')
 
     content_dir_path = os.path.join(temp_dir, 'content')
